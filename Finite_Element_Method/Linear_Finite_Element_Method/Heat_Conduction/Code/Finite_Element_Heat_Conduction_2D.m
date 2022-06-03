@@ -399,11 +399,11 @@ if(Transient == 0)
 
     if Case == 1
 
-        fem_to_vtk ('FEM_Heat_Conduction_Static_CST', NCA, ECA, T_Global);
+        fem_to_vtk_Scalar ('FEM_Heat_Conduction_Static_CST', NCA, ECA, T_Global);
 
     elseif Case == 2
 
-        fem_to_vtk ('FEM_Heat_Conduction_Static_LQ', NCA, ECA, T_Global);
+        fem_to_vtk_Scalar ('FEM_Heat_Conduction_Static_LQ', NCA, ECA, T_Global);
 
     end
 
@@ -434,12 +434,12 @@ if(Transient == 1)
             if Case == 1
 
                 filename = strcat('FEM_Heat_Conduction_CST_FE_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             elseif Case == 2
 
                 filename = strcat('FEM_Heat_Conduction_LQ_FE_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             end
     
@@ -452,12 +452,12 @@ if(Transient == 1)
             if Case == 1
 
                 filename = strcat('FEM_Heat_Conduction_CST_BE_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             elseif Case == 2
 
                 filename = strcat('FEM_Heat_Conduction_LQ_BE_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             end
     
@@ -470,12 +470,12 @@ if(Transient == 1)
             if Case == 1
 
                 filename = strcat('FEM_Heat_Conduction_CST_CN_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             elseif Case == 2
 
                 filename = strcat('FEM_Heat_Conduction_LQ_CN_',num2str(Time));
-                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+                fem_to_vtk_Scalar (filename, NCA, ECA, T_Global(:,Time));
 
             end
     
