@@ -435,7 +435,7 @@ dNdg(8) = (1-zeta)*(1+eta)/8;
 
 end
 
-function[Q] = Gauss_Quadrature(Nq)
+function [Q] = Gauss_Quadrature(Nq)
 
 if(Nq == 1)
     Q(1,1:2) = [0 2];

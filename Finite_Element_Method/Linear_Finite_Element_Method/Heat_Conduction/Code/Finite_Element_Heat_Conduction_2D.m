@@ -554,7 +554,7 @@ end
 
 end
 
-function[Q] = Gauss_Quadrature(Nq,Case)
+function [Q] = Gauss_Quadrature(Nq,Case)
 
 if Case == 1
 
