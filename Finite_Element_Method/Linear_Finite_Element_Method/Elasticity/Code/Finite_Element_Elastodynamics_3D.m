@@ -29,7 +29,7 @@ dim = 3;                    % Dimension of Problem
 
 % Transient State Data
 
-Transient = 1;         % 0: Static, 1: Transient
+Transient = 0;         % 0: Static, 1: Transient
 Time_steps = 100;      % Number of Timesteps
 tDelta = 1000;         % Delta T
 beta = 0.255;          % Time stepping parameter
