@@ -61,7 +61,7 @@ D4 = (F_bar/(6*Ae*E))*((L*L)*x - x*x*x) + (g2/L)*x
 
 #########################################################
 
-def FEM1D(Nel, order, Nq, BC):
+def FEM1D(Nel,order,Nq,BC):
 
      nen = order + 1;   # Number of nodes per element (nen = 2,3 & 4)
      Tnodes = (Nel-1)*(nen-1) + nen;   # Total number of nodes 
@@ -220,7 +220,7 @@ def FEM1D(Nel, order, Nq, BC):
 
      return d_Global
 
-def Element_Connectivity_Array(Nel, nen):
+def Element_Connectivity_Array(Nel,nen):
 
     ECA = np.zeros([Nel,nen])
     k = 1
@@ -235,7 +235,7 @@ def Element_Connectivity_Array(Nel, nen):
 
     return ECA
 
-def Nodal_Connectivity_Array(L, Tnodes):
+def Nodal_Connectivity_Array(L,Tnodes):
 
     NCA = np.zeros([Tnodes,1])
 
@@ -245,7 +245,7 @@ def Nodal_Connectivity_Array(L, Tnodes):
 
     return NCA
 
-def Shape_Functions(order, z):
+def Shape_Functions(order,z):
 
     if order == 1:
 
@@ -312,7 +312,7 @@ def Gauss_Quadrature(Nq):
 
     return Q
 
-def Plot_Solution(FEM, Actual, plot_points1, plot_points2, Label, Title):
+def Plot_Solution(FEM,Actual,plot_points1,plot_points2,Label,Title):
 
     L = 0.1
 

@@ -26,12 +26,13 @@ h = 0;                 % Neumann Boundary Condition (Traction)
 g1 = 300;              % Dirichlet Boundary Condition 1
 g2 = 310;              % Dirichlet Boundary Condition 2
 dim = 2;               % Dimension of Problem
+Case = 1;              % 1: Constant Strain Triangle, 2: Linear Quadrilateral
 
 % Transient State Data
 
 Transient = 0;         % 0: Static, 1: Transient
 Time_steps = 1000;     % Number of Timesteps
-Alpha = 0;             % 0: Forward Euler, 0.5: Crank-Nicholson, 1: Backward Euler
+Alpha = 1;             % 0: Forward Euler, 0.5: Crank-Nicholson, 1: Backward Euler
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,9 +40,9 @@ Alpha = 0;             % 0: Forward Euler, 0.5: Crank-Nicholson, 1: Backward Eul
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[NCA,ECA,Dirichlet,T0,Elements,Quadrature,nen] = Mesh_Generation(Domain);
+[NCA,ECA,Dirichlet,T0,Elements,Quadrature,nen] = Mesh_Generation(Domain,Case);
 
-[K_GlobalD,M_GlobalD,F_GlobalD,T_Global,Jacobian] = Assembly(NCA,ECA,Dirichlet,T0,Elements,nen,Kappa,RhoC,F,Alpha,Time_steps,Quadrature,Transient);
+[K_GlobalD,M_GlobalD,F_GlobalD,T_Global,Jacobian] = Assembly(NCA,ECA,Dirichlet,T0,Elements,nen,Kappa,RhoC,F,Alpha,Time_steps,Quadrature,Transient,Case);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -49,37 +50,88 @@ Alpha = 0;             % 0: Forward Euler, 0.5: Crank-Nicholson, 1: Backward Eul
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [NCA,ECA,Dirichlet,T0,Elements,Quadrature,nen] = Mesh_Generation(Domain)
+function [NCA,ECA,Dirichlet,T0,Elements,Quadrature,nen] = Mesh_Generation(Domain,Case)
 
-Quadrature = 2;
-nen = 4;
+if Case == 1
 
-Nelx = 2; Nely = 2;
-
-Elements = Nelx*Nely;
-
-ElemL = Domain(1)/Nelx;
-ElemH = Domain(2)/Nely;
-
-% Nodal Connectivity Array
-
-for i = 1:(Nely+1)
-    for j = 1:(Nelx+1)
-        NCA(j + (i-1)*(Nelx+1),1) = (j-1)*ElemL;
-        NCA(j + (i-1)*(Nelx+1),2) = (i-1)*ElemH;
+    Quadrature = 4;
+    nen = 3;
+    
+    Nelx = 2; Nely = 2;
+    
+    Elements = Nelx*Nely;
+    
+    ElemL = Domain(1)/Nelx;
+    ElemH = Domain(2)/Nely;
+    
+    % Nodal Connectivity Array
+    
+    for i = 1:(Nely+1)
+        for j = 1:(Nelx+1)
+            NCA(j + (i-1)*(Nelx+1),1) = (j-1)*ElemL;
+            NCA(j + (i-1)*(Nelx+1),2) = (i-1)*ElemH;
+        end
     end
-end
-
-% Element Connectivity Array
-
-for i = 1:Nely
-    for j = 1:Nelx
-        k = (j + (i-1)*Nelx);
-        ECA(k,1) = k + (i-1);
-        ECA(k,2) = k + i;
-        ECA(k,3) = k + i + Nelx + 1;
-        ECA(k,4) = k + i + Nelx;
+    
+    % Element Connectivity Array
+    
+    j = 0;
+    count = 0;
+    nen_1D = 2;  
+    Tnodes_1D = (Nelx-1)*(nen_1D-1) + nen_1D;
+    
+    for i = 1:2*Nelx*Nely
+        if mod(i,2) ~= 0
+            ECA(i,1) = 1 + j;
+            ECA(i,2) = 2 + j;
+            ECA(i,3) = 2+Tnodes_1D + j;
+        elseif mod(i,2) == 0
+            ECA(i,1) = 1 + j;
+            ECA(i,2) = 2+Tnodes_1D + j;
+            ECA(i,3) = 1+Tnodes_1D + j;
+        end
+        count = count+1;
+        if mod(count,2) == 0
+            j = j +1;
+            if mod((1+j),Tnodes_1D) == 0
+            j = j + 1;
+            end
+        end
     end
+
+elseif Case == 2
+
+    Quadrature = 2;
+    nen = 4;
+    
+    Nelx = 2; Nely = 2;
+    
+    Elements = Nelx*Nely;
+    
+    ElemL = Domain(1)/Nelx;
+    ElemH = Domain(2)/Nely;
+    
+    % Nodal Connectivity Array
+    
+    for i = 1:(Nely+1)
+        for j = 1:(Nelx+1)
+            NCA(j + (i-1)*(Nelx+1),1) = (j-1)*ElemL;
+            NCA(j + (i-1)*(Nelx+1),2) = (i-1)*ElemH;
+        end
+    end
+    
+    % Element Connectivity Array
+    
+    for i = 1:Nely
+        for j = 1:Nelx
+            k = (j + (i-1)*Nelx);
+            ECA(k,1) = k + (i-1);
+            ECA(k,2) = k + i;
+            ECA(k,3) = k + i + Nelx + 1;
+            ECA(k,4) = k + i + Nelx;
+        end
+    end
+
 end
 
 % Initial Condition
@@ -118,9 +170,9 @@ end
 
 end
 
-function [K_GlobalD,M_GlobalD,F_GlobalD,T_Global,Jacobian] = Assembly(NCA,ECA,Dirichlet,T0,Elements,nen,Kappa,RhoC,F,Alpha,Time_steps,Quadrature,Transient)
+function [K_GlobalD,M_GlobalD,F_GlobalD,T_Global,Jacobian] = Assembly(NCA,ECA,Dirichlet,T0,Elements,nen,Kappa,RhoC,F,Alpha,Time_steps,Quadrature,Transient,Case)
 
-GaussianMatrix = Gauss_Quadrature(Quadrature);
+GaussianMatrix = Gauss_Quadrature(Quadrature,Case);
 
 Tnodes = length(NCA);
 Dof = 1;
@@ -135,80 +187,164 @@ K_GlobalD = zeros(Dof*Tnodes - length(Dirichlet), Dof*Tnodes - length(Dirichlet)
 M_GlobalD = zeros(Dof*Tnodes - length(Dirichlet), Dof*Tnodes - length(Dirichlet));
 F_GlobalD = zeros(Dof*Tnodes - length(Dirichlet), 1);
 
-% Element Loop
 
-for e = 1:Elements
+if Case == 1
 
-    K_Local = zeros(Dof*nen, Dof*nen);
-    M_Local = zeros(Dof*nen, Dof*nen);
-    F_Local = zeros(Dof*nen, 1);
+    % Element Loop
 
-    % Quadrature Loop
-
-    for qx = 1:Quadrature
-        for qy = 1:Quadrature
-
-            [N,dNdz,dNde] = Shape_Functions(GaussianMatrix(qx,1),GaussianMatrix(qy,1));
-
-            Jacobian =[dNdz*NCA(ECA(e,:),1)   dNde*NCA(ECA(e,:),1);
-                       dNdz*NCA(ECA(e,:),2)   dNde*NCA(ECA(e,:),2)];
-
-            Jinv = inv(Jacobian);
-
-            Basis_Gradient = [dNdz',dNde'];
-            Basis = N';
-
-            % Stiffness Matrix
-
-            for A = 1:nen
-                for B = 1:nen
-                    for J = 1:2
-                        for K = 1:2
-                            for j = 1:2
-                                for k = 1:2
-
-                                    N_A = Basis_Gradient(A, :);
-                                    N_B = Basis_Gradient(B, :);
-
-                                    K_Local(A,B) = K_Local(A,B) + N_A(j)*Jinv(j,J)*Kappa(J,K)*N_B(k)*Jinv(k,K)*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
-
+    for e = 1:Elements*2
+    
+        K_Local = zeros(Dof*nen, Dof*nen);
+        M_Local = zeros(Dof*nen, Dof*nen);
+        F_Local = zeros(Dof*nen, 1);
+    
+        % Quadrature Loop
+    
+        for q = 1:Quadrature
+            for r = 1:Quadrature
+    
+                [N,dNdz,dNde] = Shape_Functions(GaussianMatrix(q,1),GaussianMatrix(q,2),Case);
+    
+                Jacobian =[dNdz*NCA(ECA(e,:),1)   dNde*NCA(ECA(e,:),1);
+                           dNdz*NCA(ECA(e,:),2)   dNde*NCA(ECA(e,:),2)];
+    
+                Jinv = inv(Jacobian);
+    
+                Basis_Gradient = [dNdz',dNde'];
+                Basis = N';
+    
+                % Stiffness Matrix
+    
+                for A = 1:nen
+                    for B = 1:nen
+                        for J = 1:2
+                            for K = 1:2
+                                for j = 1:2
+                                    for k = 1:2
+    
+                                        N_A = Basis_Gradient(A, :);
+                                        N_B = Basis_Gradient(B, :);
+    
+                                        K_Local(A,B) = K_Local(A,B) + N_A(j)*Jinv(j,J)*Kappa(J,K)*N_B(k)*Jinv(k,K)*det(Jacobian)*GaussianMatrix(q,3)*GaussianMatrix(q,3);
+    
+                                    end
                                 end
                             end
                         end
                     end
                 end
-            end
-
-            % Mass Matrix
-
-            for A = 1:nen
-                for B = 1:nen
-
+    
+                % Mass Matrix
+    
+                for A = 1:nen
+                    for B = 1:nen
+    
+                        NA = Basis(A, :);
+                        NB = Basis(B, :);
+    
+                        M_Local(A,B) = M_Local(A,B) + RhoC*NA*NB*det(Jacobian)*GaussianMatrix(q,3)*GaussianMatrix(q,3);
+    
+                    end
+                end
+    
+                % Force Vector
+    
+                for A = 1:nen
+    
                     NA = Basis(A, :);
-                    NB = Basis(B, :);
-
-                    M_Local(A,B) = M_Local(A,B) + RhoC*NA*NB*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
-
+    
+                    F_Local(A,1) = F_Local(A,1) + NA*F*det(Jacobian)*GaussianMatrix(q,3)*GaussianMatrix(q,3);
+    
                 end
             end
-
-            % Force Vector
-
-            for A = 1:nen
-
-                NA = Basis(A, :);
-
-                F_Local(A,1) = F_Local(A,1) + NA*F*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
-
-            end
         end
+    
+        % Assembly Process
+    
+        K_Global(ECA(e,:),ECA(e,:)) = K_Global(ECA(e,:),ECA(e,:)) + K_Local;
+        M_Global(ECA(e,:),ECA(e,:)) = M_Global(ECA(e,:),ECA(e,:)) + M_Local;
+        F_Global(ECA(e,:),1) = F_Global(ECA(e,:),1) + F_Local;
+    
     end
 
-    % Assembly Process
+elseif Case == 2
 
-    K_Global(ECA(e,:),ECA(e,:)) = K_Global(ECA(e,:),ECA(e,:)) + K_Local;
-    M_Global(ECA(e,:),ECA(e,:)) = M_Global(ECA(e,:),ECA(e,:)) + M_Local;
-    F_Global(ECA(e,:),1) = F_Global(ECA(e,:),1) + F_Local;
+    % Element Loop
+
+    for e = 1:Elements
+    
+        K_Local = zeros(Dof*nen, Dof*nen);
+        M_Local = zeros(Dof*nen, Dof*nen);
+        F_Local = zeros(Dof*nen, 1);
+    
+        % Quadrature Loop
+    
+        for qx = 1:Quadrature
+            for qy = 1:Quadrature
+    
+                [N,dNdz,dNde] = Shape_Functions(GaussianMatrix(qx,1),GaussianMatrix(qy,1),Case);
+    
+                Jacobian =[dNdz*NCA(ECA(e,:),1)   dNde*NCA(ECA(e,:),1);
+                           dNdz*NCA(ECA(e,:),2)   dNde*NCA(ECA(e,:),2)];
+    
+                Jinv = inv(Jacobian);
+    
+                Basis_Gradient = [dNdz',dNde'];
+                Basis = N';
+    
+                % Stiffness Matrix
+    
+                for A = 1:nen
+                    for B = 1:nen
+                        for J = 1:2
+                            for K = 1:2
+                                for j = 1:2
+                                    for k = 1:2
+    
+                                        N_A = Basis_Gradient(A, :);
+                                        N_B = Basis_Gradient(B, :);
+    
+                                        K_Local(A,B) = K_Local(A,B) + N_A(j)*Jinv(j,J)*Kappa(J,K)*N_B(k)*Jinv(k,K)*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
+    
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+    
+                % Mass Matrix
+    
+                for A = 1:nen
+                    for B = 1:nen
+    
+                        NA = Basis(A, :);
+                        NB = Basis(B, :);
+    
+                        M_Local(A,B) = M_Local(A,B) + RhoC*NA*NB*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
+    
+                    end
+                end
+    
+                % Force Vector
+    
+                for A = 1:nen
+    
+                    NA = Basis(A, :);
+    
+                    F_Local(A,1) = F_Local(A,1) + NA*F*det(Jacobian)*GaussianMatrix(qx,2)*GaussianMatrix(qy,2);
+    
+                end
+            end
+        end
+    
+        % Assembly Process
+    
+        K_Global(ECA(e,:),ECA(e,:)) = K_Global(ECA(e,:),ECA(e,:)) + K_Local;
+        M_Global(ECA(e,:),ECA(e,:)) = M_Global(ECA(e,:),ECA(e,:)) + M_Local;
+        F_Global(ECA(e,:),1) = F_Global(ECA(e,:),1) + F_Local;
+    
+    end
 
 end
 
@@ -261,7 +397,15 @@ if(Transient == 0)
     
     T_Global(NonDirichlet) = T;
 
-    fem_to_vtk ('FEM_Heat_Conduction_Static', NCA, ECA, T_Global);
+    if Case == 1
+
+        fem_to_vtk ('FEM_Heat_Conduction_Static_CST', NCA, ECA, T_Global);
+
+    elseif Case == 2
+
+        fem_to_vtk ('FEM_Heat_Conduction_Static_LQ', NCA, ECA, T_Global);
+
+    end
 
 end
 
@@ -286,27 +430,54 @@ if(Transient == 1)
     if Alpha == 0
     
         for Time = 1:Time_steps
-    
-         filename = strcat('FEM_Heat_Conduction_FE_',num2str(Time));
-         fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            if Case == 1
+
+                filename = strcat('FEM_Heat_Conduction_CST_FE_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            elseif Case == 2
+
+                filename = strcat('FEM_Heat_Conduction_LQ_FE_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            end
     
         end
     
     elseif Alpha == 1
     
         for Time = 1:Time_steps
-    
-         filename = strcat('FEM_Heat_Conduction_BE_',num2str(Time));
-         fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            if Case == 1
+
+                filename = strcat('FEM_Heat_Conduction_CST_BE_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            elseif Case == 2
+
+                filename = strcat('FEM_Heat_Conduction_LQ_BE_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            end
     
         end
     
     elseif Alpha == 0.5
     
         for Time = 1:Time_steps
-    
-         filename = strcat('FEM_Heat_Conduction_CN_',num2str(Time));
-         fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            if Case == 1
+
+                filename = strcat('FEM_Heat_Conduction_CST_CN_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            elseif Case == 2
+
+                filename = strcat('FEM_Heat_Conduction_LQ_CN_',num2str(Time));
+                fem_to_vtk (filename, NCA, ECA, T_Global(:,Time));
+
+            end
     
         end
     
@@ -334,46 +505,93 @@ end
 
 end
 
-function [N,dNdz,dNde] = Shape_Functions(zeta,eta)
+function [N,dNdz,dNde] = Shape_Functions(zeta,eta,Case)
 
-% Shape Functions
+if Case == 1
 
-N(1) = (1-zeta)*(1-eta)/4;
-N(2) = (1+zeta)*(1-eta)/4;
-N(3) = (1+zeta)*(1+eta)/4;
-N(4) = (1-zeta)*(1+eta)/4;
+    % Shape Functions
 
-% Shape Function derivative in zeta
+    N(1) = zeta;
+    N(2) = eta;
+    N(3) = 1-zeta-eta;
+    
+    % Shape Function derivative in zeta
+    
+    dNdz(1) = 1;
+    dNdz(2) = 0;
+    dNdz(3) = -1;
+    
+    % Shape Function derivative in eta
+    
+    dNde(1) = 0;
+    dNde(2) = 1;
+    dNde(3) = -1;
 
-dNdz(1) = -(1-eta)/4;
-dNdz(2) = (1-eta)/4;
-dNdz(3) = (1+eta)/4;
-dNdz(4) = -(1+eta)/4;
+elseif Case == 2
 
-% Shape Function derivative in eta
+    % Shape Functions
 
-dNde(1) = -(1-zeta)/4;
-dNde(2) = -(1+zeta)/4;
-dNde(3) = (1+zeta)/4;
-dNde(4) = (1-zeta)/4;
+    N(1) = (1-zeta)*(1-eta)/4;
+    N(2) = (1+zeta)*(1-eta)/4;
+    N(3) = (1+zeta)*(1+eta)/4;
+    N(4) = (1-zeta)*(1+eta)/4;
+    
+    % Shape Function derivative in zeta
+    
+    dNdz(1) = -(1-eta)/4;
+    dNdz(2) = (1-eta)/4;
+    dNdz(3) = (1+eta)/4;
+    dNdz(4) = -(1+eta)/4;
+    
+    % Shape Function derivative in eta
+    
+    dNde(1) = -(1-zeta)/4;
+    dNde(2) = -(1+zeta)/4;
+    dNde(3) = (1+zeta)/4;
+    dNde(4) = (1-zeta)/4;
 
 end
 
-function[Q] = Gauss_Quadrature(Nq)
-
-if(Nq == 1)
-    Q(1,1:2) = [0 2];
 end
 
-if(Nq == 2)
-    Q(1,1:2) = [-1/sqrt(3) 1];
-    Q(2,1:2) = [1/sqrt(3) 1];
-end
+function[Q] = Gauss_Quadrature(Nq,Case)
 
-if(Nq == 3)
-    Q(1,1:2) = [-sqrt(3/5) 5/9];
-    Q(2,1:2) = [0 8/9];
-    Q(3,1:2) = [sqrt(3/5) 5/9];
+if Case == 1
+
+    if(Nq == 1)
+        Q(1,1:3) = [1/3 1/3 1];
+    end
+    
+    if(Nq == 3)
+        Q(1,1:3) = [1/6 1/6 1/3];
+        Q(2,1:3) = [2/3 1/6 1/3];
+        Q(3,1:3) = [1/6 2/3 1/3];
+    end
+    
+    if(Nq == 4)
+        Q(1,1:3) = [1/3 1/3 -27/48];
+        Q(2,1:3) = [1/5 3/5 25/48];
+        Q(3,1:3) = [1/5 1/5 25/48];
+        Q(4,1:3) = [3/5 1/5 25/48];   
+    end
+
+elseif Case == 2
+
+    if(Nq == 1)
+        Q(1,1:2) = [0 2];
+    end
+    
+    if(Nq == 2)
+        Q(1,1:2) = [-1/sqrt(3) 1];
+        Q(2,1:2) = [1/sqrt(3) 1];
+    end
+    
+    if(Nq == 3)
+        Q(1,1:2) = [-sqrt(3/5) 5/9];
+        Q(2,1:2) = [0 8/9];
+        Q(3,1:2) = [sqrt(3/5) 5/9];
+    end
+
 end
 
 end
