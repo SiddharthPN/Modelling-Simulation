@@ -1,14 +1,28 @@
-%% ME535 - Project 2
-% Nathan Flynn
-% Siddharth  Palani Natarajan
+% Author: Siddharth Palani Natarajan and Nathan Flynn
 
-%Make sure to add the all the folders and subfolders in PROJECT_2_ME535 to
-%the path!!!!
+% ME 535 - Jack-O'-Lantern Surface plot using Bezier and NURBS surfaces
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Section 1 : Project Configurations
+% Section 2 : Functions
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%% Section 1 : Project Configurations %%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close all; clear; clc;
 delete *.stl; %Deletes all previous stl files in the current location that your matlab is pointing to.
 Generate_STL = false; 
 Generate_CPS = false; 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%  Section 2: Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 a = Generate_STL;
 b = Generate_CPS;
