@@ -57,7 +57,7 @@ class beamRBDO:
     def innerObjective(self,u):
 
         meanx = [1000, 500, 40000]
-        stdx = [100, 100, 2000]
+        stdx = np.sqrt([100, 100, 2000])
 
         U1 = u[0]*stdx[0] + meanx[0]
         U2 = u[1]*stdx[1] + meanx[1]
